@@ -1,0 +1,2105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#FFFFFF" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <title>Fuel Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #F7F6F3;
+      --bg2: #FFFFFF;
+      --bg3: #F0EFEb;
+      --card: #FFFFFF;
+      --card2: #F7F6F3;
+      --accent: #2B5CE6;
+      --accent2: #1A3FA8;
+      --green: #1A7A4A;
+      --red: #C0392B;
+      --yellow: #8A6800;
+      --orange: #A0520A;
+      --text: #1A1A1A;
+      --text2: #4A4A4A;
+      --text3: #888888;
+      --border: #E5E4E0;
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Screen switcher ─── */
+    .screen { display: none; }
+    .screen.active { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ── AUTH ─── */
+    #auth-screen {
+      background: var(--bg);
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px 32px;
+      gap: 0;
+      min-height: 100vh;
+    }
+    .auth-logo { text-align: center; margin-bottom: 36px; }
+    .auth-logo-icon { font-size: 2.4rem; margin-bottom: 10px; }
+    .auth-logo h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; color: var(--text); }
+    .auth-logo p { color: var(--text3); font-size: 0.84rem; margin-top: 4px; font-weight: 400; }
+
+    .auth-tabs {
+      display: flex;
+      background: var(--bg3);
+      border-radius: 8px;
+      padding: 3px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      width: 100%;
+      max-width: 340px;
+    }
+    .auth-tab {
+      flex: 1; padding: 8px; border: none; background: none;
+      color: var(--text3); border-radius: 6px; cursor: pointer;
+      font-size: 0.86rem; font-weight: 500; transition: all 0.15s;
+    }
+    .auth-tab.active { background: var(--bg2); color: var(--text); box-shadow: var(--shadow); font-weight: 600; }
+
+    .auth-form { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 340px; }
+    .auth-note {
+      margin-top: 18px; font-size: 0.72rem; color: var(--text3);
+      text-align: center; padding: 10px 16px; background: var(--bg3);
+      border-radius: 8px; border: 1px solid var(--border);
+      width: 100%; max-width: 340px;
+    }
+
+    /* ── MAIN APP ─── */
+    #main-app { max-width: 480px; margin: 0 auto; width: 100%; position: relative; }
+
+    /* Top bar */
+    .top-bar {
+      background: var(--bg2); padding: 11px 16px 10px;
+      border-bottom: 1px solid var(--border); position: sticky;
+      top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between;
+    }
+    .top-bar-left { display: flex; align-items: center; gap: 10px; }
+    .user-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--text);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700; color: var(--bg2); flex-shrink: 0;
+      text-transform: uppercase;
+    }
+    .top-bar-title { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+    .top-bar-sub { font-size: 0.68rem; color: var(--text3); margin-top: 1px; }
+
+    /* Vehicle strip */
+    .vehicle-strip {
+      background: var(--bg2); border-bottom: 1px solid var(--border);
+      display: flex; gap: 6px; padding: 8px 12px; overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .vehicle-strip:empty { display: none; }
+    .veh-chip {
+      display: flex; align-items: center; gap: 5px; padding: 5px 11px;
+      border-radius: 20px; border: 1px solid var(--border);
+      background: var(--card); cursor: pointer; white-space: nowrap;
+      font-size: 0.8rem; font-weight: 500; color: var(--text2);
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    .veh-chip .ve-icon { font-size: 0.95rem; }
+    .veh-chip.active { background: var(--text); border-color: var(--text); color: var(--bg2); font-weight: 600; }
+    .veh-chip-add {
+      display: flex; align-items: center; gap: 4px; padding: 5px 10px;
+      border-radius: 20px; border: 1px dashed var(--border);
+      background: none; cursor: pointer; white-space: nowrap;
+      font-size: 0.8rem; font-weight: 500; color: var(--text3);
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    .veh-chip-add:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Views */
+    .view { display: none; flex-direction: column; padding-bottom: 90px; min-height: 60vh; }
+    .view.active { display: flex; }
+    .scroll-content { overflow-y: auto; flex: 1; }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px; background: var(--bg2);
+      border-top: 1px solid var(--border); display: flex;
+      align-items: center; z-index: 100; padding: 0 4px;
+    }
+    .nav-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 3px; padding: 10px 0; background: none; border: none;
+      color: var(--text3); cursor: pointer; font-size: 0.58rem;
+      font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; transition: color 0.15s;
+    }
+    .nav-btn .icon { font-size: 1.2rem; line-height: 1; }
+    .nav-btn.active { color: var(--text); }
+    .nav-btn.add-btn {
+      background: var(--text); color: var(--bg2); border-radius: 50%;
+      width: 48px; height: 48px; flex: none; margin: -12px 10px 0;
+      font-size: 1.6rem; box-shadow: var(--shadow-md); transition: transform 0.15s, background 0.15s;
+    }
+    .nav-btn.add-btn:active { transform: scale(0.93); background: #333; }
+
+    /* ── Shared ─── */
+    .section { padding: 16px 16px 0; }
+    .section-title { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 8px; }
+    .card { background: var(--card); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border); margin-bottom: 10px; box-shadow: var(--shadow); }
+
+    /* Stats grid */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 16px; }
+    .stat-card {
+      background: var(--card); border-radius: var(--radius);
+      padding: 14px 13px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 3px;
+      box-shadow: var(--shadow);
+    }
+    .stat-card.wide { grid-column: 1 / -1; }
+    .stat-card .stat-icon { font-size: 1rem; margin-bottom: 4px; opacity: 0.6; }
+    .stat-card .stat-value { font-size: 1.3rem; font-weight: 700; line-height: 1.1; color: var(--text); }
+    .stat-card .stat-label { font-size: 0.65rem; color: var(--text3); font-weight: 500; margin-top: 1px; }
+    .stat-card .stat-sub { font-size: 0.65rem; color: var(--text3); }
+    .stat-card.green .stat-value { color: var(--green); }
+    .stat-card.blue .stat-value { color: var(--accent); }
+    .stat-card.yellow .stat-value { color: var(--yellow); }
+    .stat-card.orange .stat-value { color: var(--orange); }
+    .stat-card.purple .stat-value { color: #5B4FCF; }
+
+    .chart-wrap { position: relative; height: 160px; padding: 4px 0; }
+
+    /* Estimate banner */
+    .estimate-banner {
+      background: var(--bg3);
+      border-radius: var(--radius); padding: 13px 14px;
+      border: 1px solid var(--border); margin: 0 16px 10px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .estimate-banner .eb-icon { font-size: 1.4rem; flex-shrink: 0; opacity: 0.7; }
+    .estimate-banner .eb-title { font-size: 0.63rem; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .estimate-banner .eb-value { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+    .estimate-banner .eb-sub { font-size: 0.65rem; color: var(--text3); margin-top: 2px; }
+
+    /* History */
+    .history-card {
+      background: var(--card); border-radius: var(--radius); padding: 13px 14px;
+      border: 1px solid var(--border); margin-bottom: 8px;
+      display: flex; flex-direction: column; gap: 8px;
+      box-shadow: var(--shadow); transition: border-color 0.15s;
+    }
+    .history-card:hover { border-color: #C0C0C0; }
+    .history-card.milestone { background: var(--bg3); border-style: dashed; box-shadow: none; }
+
+    .hi-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 7px; }
+    .hi-date-badge { display: flex; align-items: center; gap: 6px; font-size: 0.73rem; font-weight: 500; color: var(--text3); }
+    .hi-date-badge .hi-icon { font-size: 1rem; opacity: 0.8; }
+
+    .hi-actions { display: flex; align-items: center; gap: 5px; }
+    .hi-action-btn {
+      display: flex; align-items: center; gap: 3px; padding: 3px 8px; border-radius: 6px;
+      border: 1px solid var(--border); background: var(--bg3); color: var(--text3);
+      font-size: 0.68rem; font-weight: 500; cursor: pointer; transition: all 0.15s;
+    }
+    .hi-action-btn.edit:hover { border-color: var(--accent); color: var(--accent); background: #EEF2FF; }
+    .hi-action-btn.del:hover { border-color: var(--red); color: var(--red); background: #FEF2F2; }
+
+    .hi-main-row { display: flex; align-items: baseline; justify-content: space-between; }
+    .hi-euro-val { font-size: 1.25rem; font-weight: 700; color: var(--green); }
+    .hi-km-info { font-size: 0.9rem; font-weight: 600; color: var(--text); text-align: right; }
+    .hi-km-info .hi-km-diff { font-size: 0.72rem; color: var(--accent); font-weight: 500; margin-left: 4px; }
+    .hi-km-info .hi-km-tag { font-size: 0.68rem; color: var(--text3); font-weight: 400; margin-left: 4px; }
+
+    .hi-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+    .pill { font-size: 0.67rem; font-weight: 500; padding: 2px 7px; border-radius: 4px; border: 1px solid var(--border); display: inline-flex; align-items: center; gap: 3px; background: var(--bg3); color: var(--text2); }
+    .pill.euro { color: var(--green); border-color: #B7DFC8; background: #F0FAF4; }
+    .pill.liters { color: var(--accent); border-color: #BFCDFE; background: #EEF2FF; }
+    .pill.cons { color: var(--yellow); border-color: #E5D68A; background: #FEFCE8; }
+    .pill.price { color: var(--orange); border-color: #FDBA74; background: #FFF7ED; }
+    .pill.cpkm { color: #5B4FCF; border-color: #C4BBEF; background: #F5F3FF; }
+
+    /* Monthly list */
+    .year-head { display: flex; justify-content: space-between; font-weight: 600; font-size: 0.88rem; padding-bottom: 7px; border-bottom: 1px solid var(--border); margin-bottom: 2px; color: var(--text); }
+    .year-head:not(:first-child) { margin-top: 16px; }
+    .month-row { display: flex; align-items: baseline; gap: 8px; padding: 8px 0; font-size: 0.82rem; border-bottom: 1px solid var(--border); }
+    .month-row .mr-name { flex: 1; text-transform: capitalize; color: var(--text2); }
+    .month-row .mr-meta { color: var(--text3); font-size: 0.68rem; }
+    .month-row .mr-val { font-weight: 600; color: var(--green); min-width: 72px; text-align: right; }
+
+    /* Empty state */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 56px 28px; text-align: center; gap: 8px; flex: 1;
+    }
+    .empty-state .es-icon { font-size: 2.8rem; opacity: 0.4; margin-bottom: 4px; }
+    .empty-state h2 { font-size: 1rem; font-weight: 600; color: var(--text); }
+    .empty-state p { font-size: 0.82rem; color: var(--text3); line-height: 1.6; }
+
+    /* No vehicle state */
+    .no-vehicle-state {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 40px 28px; text-align: center; gap: 14px;
+    }
+    .no-vehicle-state .nv-icon { font-size: 3rem; opacity: 0.4; }
+    .no-vehicle-state h2 { font-size: 1rem; font-weight: 600; color: var(--text); }
+    .no-vehicle-state p { font-size: 0.82rem; color: var(--text3); line-height: 1.6; }
+
+    /* ── Wizard ─── */
+    .wizard-header {
+      background: var(--bg2); padding: 12px 16px;
+      border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;
+    }
+    .wizard-header h2 { font-size: 0.95rem; font-weight: 600; flex: 1; color: var(--text); }
+    .back-btn { background: none; border: none; color: var(--text3); font-size: 1.2rem; cursor: pointer; padding: 4px; border-radius: 6px; }
+    .step-indicator { display: flex; align-items: center; gap: 8px; padding: 14px 16px 0; }
+    .step-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: all 0.25s; }
+    .step-dot.active { background: var(--text); }
+    .step-dot.done { background: var(--green); }
+    .step-line { flex: 1; height: 1px; background: var(--border); }
+    .step-label { font-size: 0.68rem; color: var(--text3); }
+    .step { display: none; padding: 16px; flex-direction: column; gap: 14px; }
+    .step.active { display: flex; }
+
+    /* Form fields */
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 0.72rem; font-weight: 600; color: var(--text2); letter-spacing: 0.2px; }
+    .field input, .field select {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+      padding: 11px 12px; color: var(--text); font-size: 0.94rem; outline: none;
+      transition: border-color 0.15s; width: 100%; -webkit-appearance: none; appearance: none;
+      box-shadow: none;
+    }
+    .field input:focus, .field select:focus { border-color: var(--text); }
+    .field input.error { border-color: var(--red); }
+    .field .field-hint { font-size: 0.68rem; color: var(--text3); }
+    .fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .optional-badge { font-size: 0.6rem; background: var(--bg3); color: var(--text3); padding: 1px 5px; border-radius: 3px; font-weight: 400; vertical-align: middle; margin-left: 4px; border: 1px solid var(--border); }
+
+    /* Buttons */
+    .btn { padding: 12px 18px; border-radius: 8px; border: none; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s, transform 0.1s; text-align: center; width: 100%; }
+    .btn:active { transform: scale(0.97); }
+    .btn.primary { background: var(--text); color: var(--bg2); }
+    .btn.primary:hover { background: #333; }
+    .btn.secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+    .btn.danger { background: #FEF2F2; color: var(--red); border: 1px solid #FECACA; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-row { display: flex; gap: 8px; }
+    .btn-row .btn { flex: 1; }
+
+    /* Summary card step 2 */
+    .summary-card { background: var(--bg3); border-radius: var(--radius); padding: 12px; border: 1px solid var(--border); }
+    .summary-card .sc-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
+    .summary-card .sc-row:last-child { border-bottom: none; }
+    .summary-card .sc-label { color: var(--text3); }
+    .summary-card .sc-val { font-weight: 600; color: var(--text); }
+    .summary-card .sc-val.green { color: var(--green); }
+    .summary-card .sc-val.blue { color: var(--accent); }
+    .summary-card .sc-val.yellow { color: var(--yellow); }
+    .summary-card .sc-val.orange { color: var(--orange); }
+
+    /* ── SETTINGS ─── */
+    .settings-section { padding: 16px 16px 0; }
+    .settings-section .section-title { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 8px; }
+    .settings-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); margin-bottom: 6px; cursor: pointer;
+      transition: background 0.12s; box-shadow: var(--shadow);
+    }
+    .settings-row:hover { background: var(--bg3); }
+    .settings-row .sr-left { display: flex; align-items: center; gap: 10px; }
+    .settings-row .sr-icon { font-size: 1rem; width: 24px; text-align: center; opacity: 0.6; }
+    .settings-row .sr-label { font-size: 0.88rem; font-weight: 500; color: var(--text); }
+    .settings-row .sr-sub { font-size: 0.7rem; color: var(--text3); margin-top: 1px; }
+    .settings-row .sr-arrow { color: var(--text3); font-size: 0.8rem; }
+    .settings-row.danger .sr-label { color: var(--red); }
+
+    /* Vehicle settings card */
+    .vehicle-settings-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 12px 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 12px;
+      box-shadow: var(--shadow);
+    }
+    .vehicle-settings-card .vc-icon { font-size: 1.6rem; flex-shrink: 0; }
+    .vehicle-settings-card .vc-body { flex: 1; min-width: 0; }
+    .vehicle-settings-card .vc-name { font-size: 0.92rem; font-weight: 600; color: var(--text); }
+    .vehicle-settings-card .vc-plate { font-size: 0.7rem; color: var(--text3); margin-top: 2px; }
+    .vehicle-settings-card .vc-count { font-size: 0.7rem; color: var(--text3); margin-top: 2px; }
+    .vehicle-settings-card .vc-actions { display: flex; gap: 5px; flex-shrink: 0; }
+    .icon-btn {
+      background: none; border: 1px solid var(--border); color: var(--text3);
+      border-radius: 6px; padding: 5px 8px; cursor: pointer; font-size: 0.8rem;
+      transition: all 0.15s;
+    }
+    .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .icon-btn.del:hover { border-color: var(--red); color: var(--red); }
+
+    /* ── MODAL ─── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+      display: flex; align-items: flex-end; justify-content: center;
+      z-index: 300; padding: 0;
+    }
+    .modal-card {
+      background: var(--bg2); border-radius: 16px 16px 0 0;
+      width: 100%; max-width: 480px; padding: 20px 20px 40px;
+      border-top: 1px solid var(--border); max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-header h3 { font-size: 1rem; font-weight: 600; color: var(--text); }
+    .modal-close { background: none; border: none; color: var(--text3); font-size: 1.1rem; cursor: pointer; padding: 4px; border-radius: 6px; }
+
+    /* Emoji picker */
+    .emoji-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+    .emoji-opt {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 9px 5px; border-radius: 8px; border: 1px solid var(--border);
+      cursor: pointer; transition: all 0.15s; background: var(--bg3);
+    }
+    .emoji-opt .eo-em { font-size: 1.5rem; }
+    .emoji-opt .eo-label { font-size: 0.58rem; color: var(--text3); font-weight: 500; text-align: center; }
+    .emoji-opt.selected { border-color: var(--text); background: var(--card); }
+
+    /* Change password form */
+    #chpass-form { display: flex; flex-direction: column; gap: 12px; }
+
+    /* ── Toast ─── */
+    #toast {
+      position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(12px);
+      background: var(--text); color: var(--bg2); padding: 8px 18px; border-radius: 20px;
+      font-size: 0.8rem; font-weight: 500;
+      opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; z-index: 400; white-space: nowrap;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (min-width: 480px) {
+      body { background: #ECEAE5; }
+      #main-app { box-shadow: 0 0 0 1px var(--border), 0 8px 40px rgba(0,0,0,0.12); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════
+     AUTH SCREEN
+════════════════════════════════════════════════ -->
+<div id="auth-screen" class="screen">
+  <div class="auth-logo">
+    <div class="auth-logo-icon">⛽</div>
+    <h1>Fuel Tracker</h1>
+    <p>Control de gasto en combustible</p>
+  </div>
+  <div class="auth-tabs">
+    <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Iniciar sesión</button>
+    <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Registrarse</button>
+  </div>
+  <div id="auth-login" class="auth-form">
+    <div class="field">
+      <label>Usuario</label>
+      <input type="text" id="login-user" placeholder="Tu nombre de usuario" autocomplete="username" autocapitalize="none" />
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="Tu contraseña" autocomplete="current-password" />
+    </div>
+    <button class="btn primary" onclick="doLogin()">Entrar →</button>
+  </div>
+  <div id="auth-register" class="auth-form" style="display:none">
+    <div class="field">
+      <label>Nombre de usuario</label>
+      <input type="text" id="reg-user" placeholder="ej. jorge" autocomplete="username" autocapitalize="none" />
+      <span class="field-hint">Letras minúsculas, números y guion bajo</span>
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" id="reg-pass" placeholder="Mínimo 4 caracteres" autocomplete="new-password" />
+    </div>
+    <div class="field">
+      <label>Confirmar contraseña</label>
+      <input type="password" id="reg-pass2" placeholder="Repite la contraseña" autocomplete="new-password" />
+    </div>
+    <button class="btn primary" onclick="doRegister()">Crear cuenta →</button>
+  </div>
+  <div class="auth-note">🔒 Datos guardados localmente en este dispositivo</div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     MAIN APP
+════════════════════════════════════════════════ -->
+<div id="main-app" class="screen">
+
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <div class="user-avatar" id="user-avatar">?</div>
+      <div>
+        <div class="top-bar-title" id="top-bar-title">⛽ Fuel Tracker</div>
+        <div class="top-bar-sub" id="top-bar-sub">Cargando…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="vehicle-strip" id="vehicle-strip"></div>
+
+  <!-- VIEW: DASHBOARD -->
+  <div id="view-dashboard" class="view active">
+    <div class="scroll-content" id="dash-scroll">
+      <div class="empty-state" id="empty-state" style="display:none">
+        <div class="es-icon">⛽</div>
+        <h2>Sin datos aún</h2>
+        <p>Pulsa <strong>+</strong> para registrar tu primer repostaje.</p>
+      </div>
+      <div id="stats-section" style="display:none">
+        <div class="stats-grid">
+          <div class="stat-card green"><div class="stat-icon">💶</div><div class="stat-value" id="s-total-cost">—</div><div class="stat-label">Total gastado</div></div>
+          <div class="stat-card blue"><div class="stat-icon">🛣️</div><div class="stat-value" id="s-total-km">—</div><div class="stat-label">Total km</div></div>
+          <div class="stat-card yellow"><div class="stat-icon">📊</div><div class="stat-value" id="s-avg-cpkm">—</div><div class="stat-label">Coste medio / km</div><div class="stat-sub" id="s-avg-l100"></div></div>
+          <div class="stat-card orange"><div class="stat-icon">🔄</div><div class="stat-value" id="s-avg-km">—</div><div class="stat-label">Km / repostaje</div><div class="stat-sub" id="s-avg-days"></div></div>
+          <div class="stat-card purple wide"><div class="stat-icon">⛽</div><div class="stat-value" id="s-avg-fillup">—</div><div class="stat-label">Gasto medio / repostaje</div><div class="stat-sub" id="s-count"></div></div>
+        </div>
+        <div class="estimate-banner" id="estimate-banner" style="display:none">
+          <div class="eb-icon">🔮</div>
+          <div class="eb-body">
+            <div class="eb-title">Estimación próximo repostaje</div>
+            <div class="eb-value" id="est-date">—</div>
+            <div class="eb-sub" id="est-sub"></div>
+          </div>
+        </div>
+        <div class="section"><div class="section-title">Gasto por repostaje (€)</div><div class="card"><div class="chart-wrap"><canvas id="chart-cost"></canvas></div></div></div>
+        <div class="section"><div class="section-title">Kilómetros por tramo</div><div class="card"><div class="chart-wrap"><canvas id="chart-km"></canvas></div></div></div>
+        <div class="section" id="chart-cons-section" style="display:none"><div class="section-title">Consumo (L/100km)</div><div class="card"><div class="chart-wrap"><canvas id="chart-cons"></canvas></div></div></div>
+        <div class="section" id="chart-price-section" style="display:none"><div class="section-title">Precio por litro (€/L)</div><div class="card"><div class="chart-wrap"><canvas id="chart-price"></canvas></div></div></div>
+        <div class="section"><div class="section-title">Gasto por mes (últimos 12 meses)</div><div class="card"><div class="chart-wrap"><canvas id="chart-month"></canvas></div></div><div class="card" id="monthly-list"></div></div>
+      </div>
+      <div class="no-vehicle-state" id="no-vehicle-state" style="display:none">
+        <div class="nv-icon">🚗</div>
+        <h2>Sin vehículos</h2>
+        <p>Añade tu primer vehículo para empezar a registrar repostajes.</p>
+        <button class="btn primary" style="max-width:240px" onclick="openVehicleModal()">+ Añadir vehículo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: HISTORY -->
+  <div id="view-history" class="view">
+    <div class="top-bar" style="position:sticky;top:0;z-index:40;padding:10px 14px">
+      <div class="top-bar-title" style="font-size:0.95rem">📋 Historial</div>
+      <div class="top-bar-sub" id="hist-subtitle">—</div>
+    </div>
+    <div class="scroll-content" id="history-list"></div>
+  </div>
+
+  <!-- VIEW: ADD (wizard) -->
+  <div id="view-add" class="view">
+    <div class="wizard-header">
+      <button class="back-btn" onclick="cancelAdd()">←</button>
+      <h2 id="wizard-title">Kilometraje actual</h2>
+    </div>
+    <div class="step-indicator">
+      <div class="step-dot active" id="dot-1"></div>
+      <div class="step-line"></div>
+      <div class="step-dot" id="dot-2"></div>
+      <span class="step-label" id="step-label">Paso 1 de 2</span>
+    </div>
+    <!-- Step 1 -->
+    <div class="step active" id="step-1">
+      <div class="field">
+        <label>Fecha</label>
+        <input type="date" id="input-fecha" oninput="updateKmHint()" style="color-scheme:dark" />
+      </div>
+      <div class="field">
+        <label>Kilómetros del cuentakilómetros</label>
+        <input type="number" id="input-km" inputmode="numeric" placeholder="ej. 45320" min="0" />
+        <span class="field-hint" id="km-hint">Los km que marca ahora el cuentakilómetros</span>
+      </div>
+      <button class="btn primary" onclick="goStep2()">Siguiente →</button>
+    </div>
+    <!-- Step 2 -->
+    <div class="step" id="step-2">
+      <div class="field">
+        <label>Euros gastados <span style="color:var(--red)">*</span></label>
+        <input type="number" id="input-euros" inputmode="decimal" step="0.01" placeholder="ej. 65.40" min="0" />
+      </div>
+      <div class="field">
+        <label>Litros <span class="optional-badge">opcional</span></label>
+        <input type="number" id="input-litros" inputmode="decimal" step="0.01" placeholder="ej. 42.5" min="0" />
+      </div>
+      <div id="calc-preview" class="summary-card" style="display:none">
+        <div class="sc-row"><span class="sc-label">Km recorridos</span><span class="sc-val blue" id="prev-km">—</span></div>
+        <div class="sc-row"><span class="sc-label">Coste / km</span><span class="sc-val green" id="prev-cpkm">—</span></div>
+        <div class="sc-row" id="prev-ppl-row" style="display:none"><span class="sc-label">Precio / litro</span><span class="sc-val orange" id="prev-ppl">—</span></div>
+        <div class="sc-row" id="prev-cons-row" style="display:none"><span class="sc-label">Consumo</span><span class="sc-val yellow" id="prev-cons">—</span></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn secondary" onclick="goStep1()">← Atrás</button>
+        <button class="btn primary" onclick="saveEntry()">Guardar ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: SETTINGS -->
+  <div id="view-settings" class="view">
+    <div class="scroll-content" style="padding-bottom:10px">
+      <div class="settings-section">
+        <div class="section-title">Mis vehículos</div>
+        <div id="vehicles-settings-list"></div>
+        <div id="add-vehicle-btn-wrap" style="margin-bottom:10px">
+          <button class="btn secondary" onclick="openVehicleModal()" id="add-vehicle-settings-btn">+ Añadir vehículo</button>
+        </div>
+      </div>
+      <div class="settings-section" style="margin-top:6px">
+        <div class="section-title">Datos</div>
+        <div class="settings-row" onclick="exportExcel()">
+          <div class="sr-left">
+            <span class="sr-icon">📥</span>
+            <div><div class="sr-label">Exportar a Excel</div><div class="sr-sub">Un archivo .xlsx con todos tus vehículos</div></div>
+          </div>
+          <span class="sr-arrow">›</span>
+        </div>
+      </div>
+      <div class="settings-section" style="margin-top:6px">
+        <div class="section-title">Cuenta</div>
+        <div class="settings-row" onclick="openChPassModal()">
+          <div class="sr-left">
+            <span class="sr-icon">🔑</span>
+            <div><div class="sr-label">Cambiar contraseña</div></div>
+          </div>
+          <span class="sr-arrow">›</span>
+        </div>
+        <div class="settings-row danger" onclick="doLogout()">
+          <div class="sr-left">
+            <span class="sr-icon">🚪</span>
+            <div><div class="sr-label">Cerrar sesión</div><div class="sr-sub" id="logout-user-sub"></div></div>
+          </div>
+          <span class="sr-arrow">›</span>
+        </div>
+      </div>
+      <div class="settings-section" style="margin-top:6px">
+        <div class="section-title">Información</div>
+        <div class="card" style="font-size:0.75rem; color:var(--text3); line-height:1.6">
+          🔒 Los datos se almacenan en este dispositivo (localStorage). Las contraseñas se guardan cifradas con SHA-256. No se envía nada a ningún servidor.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-dash" onclick="showView('dashboard')"><span class="icon">📊</span>Dashboard</button>
+    <button class="nav-btn add-btn" id="fab-add" onclick="showAdd()">+</button>
+    <button class="nav-btn" id="nav-hist" onclick="showView('history')"><span class="icon">📋</span>Historial</button>
+    <button class="nav-btn" id="nav-settings" onclick="showView('settings')"><span class="icon">⚙️</span>Ajustes</button>
+  </nav>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     VEHICLE MODAL
+════════════════════════════════════════════════ -->
+<div id="vehicle-modal" class="modal-overlay" style="display:none" onclick="closeVehicleModal(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="vehicle-modal-title">Añadir vehículo</h3>
+      <button class="modal-close" onclick="closeVehicleModal()">✕</button>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:14px">
+      <div class="field">
+        <label>Nombre</label>
+        <input type="text" id="vm-name" placeholder="ej. Golf TDI, Mi moto…" />
+      </div>
+      <div class="field">
+        <label>Tipo de vehículo</label>
+        <div class="emoji-grid" id="vm-emoji-picker"></div>
+      </div>
+      <div class="field">
+        <label>Matrícula <span class="optional-badge">opcional</span></label>
+        <input type="text" id="vm-plate" placeholder="ej. 1234ABC" style="text-transform:uppercase" maxlength="10" />
+      </div>
+      <div class="field">
+        <label>Kilometraje inicial</label>
+        <input type="number" id="vm-km" inputmode="numeric" placeholder="ej. 45320" min="0" />
+        <span class="field-hint" id="vm-km-hint">Los km del cuentakilómetros antes del primer repostaje</span>
+      </div>
+      <!-- PRIMER REPOSTAJE OPCIONAL AL DAR DE ALTA -->
+      <div id="vm-first-fill-wrap" style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:10px">
+        <div style="font-size:0.78rem; font-weight:700; color:var(--accent); display:flex; align-items:center; gap:6px">
+          ⛽ Repostaje inicial al dar de alta <span class="optional-badge">opcional</span>
+        </div>
+        <div class="field">
+          <label>Euros gastados en el alta</label>
+          <input type="number" id="vm-euros" inputmode="decimal" step="0.01" placeholder="ej. 50.00" min="0" />
+        </div>
+        <div class="field">
+          <label>Litros <span class="optional-badge">opcional</span></label>
+          <input type="number" id="vm-litros" inputmode="decimal" step="0.01" placeholder="ej. 32.5" min="0" />
+        </div>
+      </div>
+      <button class="btn primary" onclick="saveVehicle()">Guardar vehículo</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div id="chpass-modal" class="modal-overlay" style="display:none" onclick="closeChPassModal(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Cambiar contraseña</h3>
+      <button class="modal-close" onclick="closeChPassModal()">✕</button>
+    </div>
+    <div id="chpass-form" style="display:flex; flex-direction:column; gap:12px">
+      <div class="field">
+        <label>Contraseña actual</label>
+        <input type="password" id="cp-current" placeholder="Tu contraseña actual" />
+      </div>
+      <div class="field">
+        <label>Nueva contraseña</label>
+        <input type="password" id="cp-new" placeholder="Mínimo 4 caracteres" />
+      </div>
+      <div class="field">
+        <label>Confirmar nueva contraseña</label>
+        <input type="password" id="cp-new2" placeholder="Repite la nueva contraseña" />
+      </div>
+      <button class="btn primary" onclick="doChangePassword()">Cambiar contraseña</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+/* ═══════════════════════════════════════════════
+   STORAGE
+═══════════════════════════════════════════════ */
+const STORAGE_KEY = 'fuel_tracker_v3';
+const SESSION_KEY = 'fuel_tracker_session';
+
+// ONE-SHOT RESET — elimina datos de todas las cuentas (se ejecuta una sola vez)
+if (!localStorage.getItem('ft_reset_oct2026')) {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(SESSION_KEY);
+  localStorage.setItem('ft_reset_oct2026', '1');
+}
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { users: {} }; }
+  catch { return { users: {} }; }
+}
+function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+
+function getSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY)) || null; }
+  catch { return null; }
+}
+function setSession(s) { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
+function clearSession() { localStorage.removeItem(SESSION_KEY); }
+
+/* ═══════════════════════════════════════════════
+   CRYPTO
+═══════════════════════════════════════════════ */
+async function hashPassword(username, password) {
+  const encoder = new TextEncoder();
+  const raw = username.toLowerCase() + ':' + password + ':ft_salt_2026';
+  const buf = await crypto.subtle.digest('SHA-256', encoder.encode(raw));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   SESSION STATE
+═══════════════════════════════════════════════ */
+let session = null; // { username, activeVehicleId }
+
+function getCurrentUser() {
+  if (!session) return null;
+  const data = loadData();
+  return data.users[session.username] || null;
+}
+
+function getActiveVehicle() {
+  const user = getCurrentUser();
+  if (!user || !session.activeVehicleId) return null;
+  return (user.vehicles || []).find(v => v.id === session.activeVehicleId) || null;
+}
+
+function getLastOdometer(veh) {
+  if (!veh) return null;
+  const es = veh.entries || [];
+  if (es.length > 0) return es[es.length - 1].odometro;
+  return (veh.km_inicial !== undefined && veh.km_inicial !== null) ? veh.km_inicial : null;
+}
+
+function getActiveEntries() {
+  const veh = getActiveVehicle();
+  return veh ? (veh.entries || []) : [];
+}
+
+/* ═══════════════════════════════════════════════
+   AUTH UI
+═══════════════════════════════════════════════ */
+function switchAuthTab(tab) {
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+  document.getElementById('auth-login').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('auth-register').style.display = tab === 'register' ? '' : 'none';
+}
+
+async function doLogin() {
+  const username = document.getElementById('login-user').value.trim().toLowerCase();
+  const password = document.getElementById('login-pass').value;
+  if (!username || !password) { toast('⚠️ Completa todos los campos'); return; }
+  const data = loadData();
+  if (!data.users[username]) { toast('❌ Usuario no encontrado'); return; }
+  const hash = await hashPassword(username, password);
+  if (hash !== data.users[username].passwordHash) { toast('❌ Contraseña incorrecta'); return; }
+  const vehicles = data.users[username].vehicles || [];
+  session = { username, activeVehicleId: vehicles.length > 0 ? vehicles[0].id : null };
+  setSession(session);
+  initMainApp();
+}
+
+async function doRegister() {
+  const username = document.getElementById('reg-user').value.trim().toLowerCase();
+  const password = document.getElementById('reg-pass').value;
+  const password2 = document.getElementById('reg-pass2').value;
+  if (!username || !password || !password2) { toast('⚠️ Completa todos los campos'); return; }
+  if (!/^[a-z0-9_]{1,20}$/.test(username)) { toast('⚠️ Usuario: solo letras minúsculas, números y _'); return; }
+  if (password.length < 4) { toast('⚠️ Contraseña: mínimo 4 caracteres'); return; }
+  if (password !== password2) { toast('⚠️ Las contraseñas no coinciden'); return; }
+  const data = loadData();
+  if (data.users[username]) { toast('❌ Ese nombre de usuario ya existe'); return; }
+  const hash = await hashPassword(username, password);
+  data.users[username] = { displayName: username, passwordHash: hash, vehicles: [] };
+  saveData(data);
+  session = { username, activeVehicleId: null };
+  setSession(session);
+  toast('✅ Cuenta creada. ¡Bienvenido!');
+  initMainApp();
+}
+
+function doLogout() {
+  if (!confirm('¿Cerrar sesión?')) return;
+  clearSession();
+  session = null;
+  resetCharts();
+  document.getElementById('main-app').classList.remove('active');
+  document.getElementById('auth-screen').classList.add('active');
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+}
+
+/* ═══════════════════════════════════════════════
+   INIT MAIN APP
+═══════════════════════════════════════════════ */
+function initMainApp() {
+  document.getElementById('auth-screen').classList.remove('active');
+  document.getElementById('main-app').classList.add('active');
+  const user = getCurrentUser();
+  const initial = session.username.charAt(0).toUpperCase();
+  document.getElementById('user-avatar').textContent = initial;
+  document.getElementById('top-bar-title').textContent = '⛽ Fuel Tracker';
+  document.getElementById('logout-user-sub').textContent = `Sesión de ${session.username}`;
+  renderVehicleStrip();
+  showView('dashboard');
+}
+
+/* ═══════════════════════════════════════════════
+   VEHICLE STRIP
+═══════════════════════════════════════════════ */
+function renderVehicleStrip() {
+  const user = getCurrentUser();
+  const vehicles = user ? (user.vehicles || []) : [];
+  const strip = document.getElementById('vehicle-strip');
+  strip.innerHTML = '';
+
+  vehicles.forEach(v => {
+    const chip = document.createElement('div');
+    chip.className = 'veh-chip' + (v.id === session.activeVehicleId ? ' active' : '');
+    chip.innerHTML = `<span class="ve-icon">${v.emoji}</span>${v.name}`;
+    chip.onclick = () => switchVehicle(v.id);
+    strip.appendChild(chip);
+  });
+
+  if (vehicles.length < 3) {
+    const addChip = document.createElement('div');
+    addChip.className = 'veh-chip-add';
+    addChip.innerHTML = `<span>+</span> Añadir vehículo`;
+    addChip.onclick = () => openVehicleModal();
+    strip.appendChild(addChip);
+  }
+
+  // Update add-vehicle button visibility in settings
+  const addBtn = document.getElementById('add-vehicle-settings-btn');
+  if (addBtn) addBtn.style.display = vehicles.length >= 3 ? 'none' : '';
+}
+
+function switchVehicle(vehicleId) {
+  session.activeVehicleId = vehicleId;
+  setSession(session);
+  resetCharts();
+  renderVehicleStrip();
+  renderDashboard();
+  if (document.getElementById('view-history').classList.contains('active')) renderHistory();
+  if (document.getElementById('view-settings').classList.contains('active')) renderSettings();
+}
+
+/* ═══════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════ */
+let currentView = 'dashboard';
+let chartInstances = {};
+
+function showView(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  document.querySelectorAll('.nav-btn:not(.add-btn)').forEach(b => b.classList.remove('active'));
+  const navMap = { dashboard: 'nav-dash', history: 'nav-hist', settings: 'nav-settings' };
+  if (navMap[view]) document.getElementById(navMap[view]).classList.add('active');
+  currentView = view;
+  if (view === 'dashboard') renderDashboard();
+  else if (view === 'history') renderHistory();
+  else if (view === 'settings') renderSettings();
+}
+
+function showAdd() {
+  if (!getActiveVehicle()) { toast('⚠️ Primero añade un vehículo'); openVehicleModal(); return; }
+  openWizard(null);
+}
+
+function editEntry(id) { openWizard(id); }
+
+function openWizard(entryId) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-add').classList.add('active');
+  document.querySelectorAll('.nav-btn:not(.add-btn)').forEach(b => b.classList.remove('active'));
+  resetWizard();
+  if (entryId) {
+    const veh = getActiveVehicle();
+    const e = (veh.entries || []).find(x => x.id === entryId);
+    if (e) {
+      editingEntryId = entryId;
+      document.getElementById('input-fecha').value = localDateStr(e.fecha);
+      document.getElementById('input-km').value = e.odometro;
+      document.getElementById('input-euros').value = e.euros;
+      document.getElementById('input-litros').value = e.litros || '';
+      document.getElementById('wizard-title').textContent = `${veh.emoji} ${veh.name} — Editar repostaje`;
+    }
+  }
+  updateKmHint();
+}
+
+function updateKmHint() {
+  const veh = getActiveVehicle();
+  const hint = document.getElementById('km-hint');
+  const val = document.getElementById('input-fecha').value;
+  hint.className = 'field-hint';
+  hint.textContent = 'Los km que marca el cuentakilómetros en esa fecha';
+  if (!veh || !val) return;
+  const orig = editingEntryId ? (veh.entries || []).find(e => e.id === editingEntryId) : null;
+  const fechaISO = dateInputToISO(val, orig ? orig.fecha : null);
+  const altaDate = veh.fecha_alta ? new Date(veh.fecha_alta) : null;
+  const entryDate = new Date(fechaISO);
+  const antesDelAlta = altaDate && entryDate < altaDate;
+  const { prevKm, nextKm } = neighborsFor(veh, fechaISO, editingEntryId);
+  if (antesDelAlta && veh.km_inicial != null) {
+    hint.textContent = `Fecha anterior al alta — debe ser inferior a ${fmt(veh.km_inicial, 0)} km (km del alta)`;
+    if (nextKm !== null) hint.textContent += ` y no superar ${fmt(nextKm, 0)} km`;
+  } else if (prevKm !== null && nextKm !== null) {
+    hint.textContent = `Debe estar entre ${fmt(prevKm, 0)} y ${fmt(nextKm, 0)} km`;
+  } else if (prevKm !== null) {
+    hint.textContent = `Registro anterior: ${fmt(prevKm, 0)} km`;
+  }
+}
+
+function cancelAdd() { showView(currentView === 'add' ? 'dashboard' : currentView); }
+
+/* ═══════════════════════════════════════════════
+   DATA HELPERS
+═══════════════════════════════════════════════ */
+const pad2 = n => String(n).padStart(2, '0');
+
+function localDateStr(d) {
+  d = new Date(d);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+// Fecha elegida (YYYY-MM-DD) -> ISO. Conserva la hora original si no cambia el día.
+function dateInputToISO(value, originalISO) {
+  if (originalISO && localDateStr(originalISO) === value) return originalISO;
+  if (value === localDateStr(new Date())) return new Date().toISOString();
+  return new Date(value + 'T12:00:00').toISOString();
+}
+
+function sortEntries(list) {
+  return list.sort((a, b) => (new Date(a.fecha) - new Date(b.fecha)) || (a.odometro - b.odometro));
+}
+
+// Ordena por fecha y recalcula km recorridos, consumo y coste/km de toda la cadena
+function recalcEntries(veh) {
+  const list = sortEntries(veh.entries || []);
+  // La base inicial solo aplica si hay km_inicial. Para entradas anteriores al alta,
+  // la base es el odómetro del repostaje previo (cadena cronológica libre).
+  let base = null;
+  list.forEach((e, i) => {
+    if (i === 0) {
+      // Primera entrada: si el km_inicial existe y esta entrada es >= alta, usarlo como base
+      const altaDate = veh.fecha_alta ? new Date(veh.fecha_alta) : null;
+      const entryDate = new Date(e.fecha);
+      if (veh.km_inicial != null && altaDate && entryDate >= altaDate) {
+        base = veh.km_inicial;
+      } else {
+        base = null; // sin base → km_recorridos = 0 para la primera entrada
+      }
+    }
+    const km = base !== null ? Math.max(0, e.odometro - base) : 0;
+    e.km_recorridos = km;
+    e.consumo_l100km = (e.litros && km > 0) ? (e.litros / km) * 100 : null;
+    e.coste_por_km = km > 0 ? e.euros / km : null;
+    e.precio_litro = (e.litros && e.euros) ? e.euros / e.litros : null;
+    base = e.odometro;
+  });
+  veh.entries = list;
+}
+
+// Km del registro anterior y del siguiente según la fecha
+function neighborsFor(veh, fechaISO, excludeId) {
+  const t = new Date(fechaISO);
+  const others = sortEntries((veh.entries || []).filter(e => e.id !== excludeId));
+  let prev = null, next = null;
+  for (const e of others) {
+    if (new Date(e.fecha) <= t) prev = e; else { next = e; break; }
+  }
+  const ini = (veh.km_inicial !== undefined && veh.km_inicial !== null) ? veh.km_inicial : null;
+  // Solo usar km_inicial como piso si la fecha de la nueva entrada es >= fecha_alta del vehículo
+  const altaDate = veh.fecha_alta ? new Date(veh.fecha_alta) : null;
+  const iniFloor = (ini !== null && altaDate && t >= altaDate) ? ini : null;
+  return { prevKm: prev ? prev.odometro : iniFloor, nextKm: next ? next.odometro : null };
+}
+
+function kmError(veh, fechaISO, km, excludeId) {
+  const { prevKm, nextKm } = neighborsFor(veh, fechaISO, excludeId);
+  // Para fechas anteriores al alta: el km no puede superar km_inicial
+  const altaDate = veh.fecha_alta ? new Date(veh.fecha_alta) : null;
+  if (altaDate && new Date(fechaISO) < altaDate && veh.km_inicial != null && km >= veh.km_inicial) {
+    return `Con esa fecha (anterior al alta), el km debe ser inferior a ${fmt(veh.km_inicial, 0)}`;
+  }
+  if (prevKm !== null && km < prevKm) return `Con esa fecha, el km debe ser al menos ${fmt(prevKm, 0)}`;
+  if (nextKm !== null && km > nextKm) return `Con esa fecha, el km no puede superar ${fmt(nextKm, 0)}`;
+  return null;
+}
+
+function aggregateMonthly(entries) {
+  const by = {};
+  entries.forEach(e => {
+    const d = new Date(e.fecha);
+    const key = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+    const m = by[key] || (by[key] = { euros: 0, km: 0, n: 0, litros: 0 });
+    m.euros += e.euros; m.km += e.km_recorridos || 0; m.n += 1; m.litros += e.litros || 0;
+  });
+  return by;
+}
+
+function buildWorkbook(vehicles) {
+  const wb = XLSX.utils.book_new();
+
+  // ── HELPERS DE FORMATO ─────────────────────────────────────────────────
+  const applyFmt = (ws, r, c, z) => {
+    const ref = XLSX.utils.encode_cell({ r, c });
+    if (ws[ref] && ws[ref].t === "n") ws[ref].z = z;
+  };
+
+  const DIAS_SEMANA = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+  const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+  // ── DATOS AGREGADOS POR MES Y VEHÍCULO ────────────────────────────────
+  const monthSet = new Set();
+  vehicles.forEach(v => {
+    (v.entries || []).forEach(e => {
+      const d = new Date(e.fecha);
+      monthSet.add(`${d.getFullYear()}-${pad2(d.getMonth() + 1)}`);
+    });
+  });
+  const sortedMonths = Array.from(monthSet).sort();
+  const monthLabels = sortedMonths.map(k => {
+    const [y, m] = k.split("-");
+    const name = MESES[+m - 1];
+    return `${name} ${y}`;
+  });
+
+  const byVehMonth = {};
+  vehicles.forEach(v => {
+    const vm = (byVehMonth[v.id] = {});
+    (v.entries || []).forEach(e => {
+      const d = new Date(e.fecha);
+      const k = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+      const item = vm[k] || (vm[k] = { euros: 0, km: 0, litros: 0, count: 0 });
+      item.euros += e.euros || 0;
+      item.km += e.km_recorridos || 0;
+      item.litros += e.litros || 0;
+      item.count += 1;
+    });
+  });
+
+  const vehHeaders = vehicles.map(v => v.name + (v.plate ? ` (${v.plate})` : ""));
+
+  // ══════════════════════════════════════════════════════════════════════
+  // PESTAÑA 1: BASE DATOS (FORMATO MATRIZ PARA TABLA DINÁMICA DE EXCEL)
+  // ══════════════════════════════════════════════════════════════════════
+  const COLS_PIVOT = [
+    "Vehículo", "Matrícula", "Fecha", "Año", "Mes", "Nombre Mes",
+    "Año-Mes", "Trimestre", "Día Semana", "Tipo Registro",
+    "Km Cuentakilómetros", "Km Recorridos", "Importe (€)", "Litros (L)",
+    "Precio/Litro (€/L)", "Consumo (L/100km)", "Coste/Km (€/km)"
+  ];
+  const aoaPivot = [COLS_PIVOT];
+
+  const allFlatEntries = [];
+  vehicles.forEach(v => {
+    if (v.km_inicial !== undefined && v.km_inicial !== null) {
+      const d = v.fecha_alta ? new Date(v.fecha_alta) : new Date();
+      allFlatEntries.push({
+        vehiculo: v.name,
+        matricula: v.plate || "",
+        fechaDate: d,
+        tipo: "Alta / Km inicial",
+        odometro: v.km_inicial,
+        km_recorridos: 0,
+        euros: 0,
+        litros: 0,
+        precio_litro: null,
+        consumo_l100km: null,
+        coste_por_km: null
+      });
+    }
+    (v.entries || []).forEach(e => {
+      const d = new Date(e.fecha);
+      allFlatEntries.push({
+        vehiculo: v.name,
+        matricula: v.plate || "",
+        fechaDate: d,
+        tipo: "Repostaje",
+        odometro: e.odometro,
+        km_recorridos: e.km_recorridos || 0,
+        euros: e.euros || 0,
+        litros: e.litros != null ? e.litros : 0,
+        precio_litro: (e.litros && e.euros) ? +(e.euros / e.litros).toFixed(4) : null,
+        consumo_l100km: e.consumo_l100km != null ? +e.consumo_l100km.toFixed(2) : null,
+        coste_por_km: e.coste_por_km != null ? +e.coste_por_km.toFixed(4) : null
+      });
+    });
+  });
+
+  allFlatEntries.sort((a, b) => a.fechaDate - b.fechaDate);
+
+  allFlatEntries.forEach(e => {
+    const d = e.fechaDate;
+    const year = d.getFullYear();
+    const monthNum = d.getMonth() + 1;
+    const monthName = MESES[d.getMonth()];
+    const yearMonth = `${year}-${pad2(monthNum)}`;
+    const quarter = `Q${Math.ceil(monthNum / 3)}`;
+    const dayOfWeek = DIAS_SEMANA[d.getDay()];
+
+    aoaPivot.push([
+      e.vehiculo,
+      e.matricula,
+      d,
+      year,
+      monthNum,
+      monthName,
+      yearMonth,
+      quarter,
+      dayOfWeek,
+      e.tipo,
+      e.odometro,
+      e.km_recorridos,
+      e.euros,
+      e.litros,
+      e.precio_litro !== null ? e.precio_litro : "",
+      e.consumo_l100km !== null ? e.consumo_l100km : "",
+      e.coste_por_km !== null ? e.coste_por_km : ""
+    ]);
+  });
+
+  const wsPivot = XLSX.utils.aoa_to_sheet(aoaPivot, { cellDates: true });
+  for (let r = 1; r < aoaPivot.length; r++) {
+    applyFmt(wsPivot, r, 2, "dd/mm/yyyy");
+    applyFmt(wsPivot, r, 3, "0");         // Año
+    applyFmt(wsPivot, r, 4, "0");         // Mes
+    applyFmt(wsPivot, r, 10, "#,##0");     // Km Cuentakilómetros
+    applyFmt(wsPivot, r, 11, "#,##0");     // Km Recorridos
+    applyFmt(wsPivot, r, 12, "#,##0.00");  // Importe €
+    applyFmt(wsPivot, r, 13, "#,##0.00");  // Litros
+    applyFmt(wsPivot, r, 14, "#,##0.000"); // €/L
+    applyFmt(wsPivot, r, 15, "#,##0.00");  // L/100km
+    applyFmt(wsPivot, r, 16, "#,##0.0000"); // €/km
+  }
+  wsPivot["!cols"] = [18, 12, 12, 8, 8, 14, 12, 10, 12, 16, 22, 16, 14, 12, 14, 16, 14].map(wch => ({ wch }));
+  XLSX.utils.book_append_sheet(wb, wsPivot, "Base Datos (Tabla Dinámica)");
+
+  // ══════════════════════════════════════════════════════════════════════
+  // PESTAÑA 2: RESUMEN GENERAL POR VEHÍCULO
+  // ══════════════════════════════════════════════════════════════════════
+  const aoaResumen = [];
+  aoaResumen.push(["FUEL TRACKER — Resumen General por Vehículo", "", ""]);
+  aoaResumen.push(["Exportado el", new Date(), ""]);
+  aoaResumen.push([]);
+
+  aoaResumen.push([
+    "Vehículo", "Matrícula", "Tipo", "Fecha alta", "Km inicial",
+    "Km actuales (odómetro)", "Km totales recorridos",
+    "Nº repostajes", "Total gastado (€)", "Total litros",
+    "Precio medio €/L", "Consumo medio L/100 km",
+    "Coste medio €/km", "Km medios por repostaje",
+    "Días entre repostajes (media)", "Gasto medio por repostaje (€)",
+    "Primer repostaje", "Último repostaje"
+  ]);
+
+  vehicles.forEach(v => {
+    const entries = (v.entries || []).filter(e => e.euros > 0);
+    const sortedE = [...entries].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+    const totalEuros = entries.reduce((s, e) => s + (e.euros || 0), 0);
+    const totalLitros = entries.reduce((s, e) => s + (e.litros || 0), 0);
+    const totalKm = entries.reduce((s, e) => s + (e.km_recorridos || 0), 0);
+    const tramosKm = entries.filter(e => e.km_recorridos > 0);
+    const avgKm = tramosKm.length > 0 ? tramosKm.reduce((s, e) => s + e.km_recorridos, 0) / tramosKm.length : null;
+    const consEntries = entries.filter(e => e.consumo_l100km != null);
+    const avgCons = consEntries.length > 0 ? consEntries.reduce((s, e) => s + e.consumo_l100km, 0) / consEntries.length : null;
+    const cpkmEntries = entries.filter(e => e.coste_por_km != null);
+    const avgCpkm = cpkmEntries.length > 0 ? cpkmEntries.reduce((s, e) => s + e.coste_por_km, 0) / cpkmEntries.length : null;
+    const pplEntries = entries.filter(e => e.litros && e.euros);
+    const avgPpl = pplEntries.length > 0 ? pplEntries.reduce((s, e) => s + e.euros / e.litros, 0) / pplEntries.length : null;
+    const avgFillup = entries.length > 0 ? totalEuros / entries.length : null;
+
+    let avgDays = null;
+    if (sortedE.length >= 2) {
+      const diffs = [];
+      for (let i = 1; i < sortedE.length; i++) {
+        diffs.push((new Date(sortedE[i].fecha) - new Date(sortedE[i-1].fecha)) / 86400000);
+      }
+      avgDays = diffs.reduce((s, d) => s + d, 0) / diffs.length;
+    }
+
+    const lastOdo = sortedE.length > 0 ? sortedE[sortedE.length - 1].odometro : (v.km_inicial || null);
+
+    aoaResumen.push([
+      v.name,
+      v.plate || "",
+      v.emoji || "",
+      v.fecha_alta ? new Date(v.fecha_alta) : "",
+      v.km_inicial != null ? v.km_inicial : "",
+      lastOdo != null ? lastOdo : "",
+      totalKm || 0,
+      entries.length,
+      totalEuros > 0 ? +totalEuros.toFixed(2) : 0,
+      totalLitros > 0 ? +totalLitros.toFixed(2) : 0,
+      avgPpl != null ? +avgPpl.toFixed(3) : "",
+      avgCons != null ? +avgCons.toFixed(2) : "",
+      avgCpkm != null ? +avgCpkm.toFixed(4) : "",
+      avgKm != null ? +avgKm.toFixed(1) : "",
+      avgDays != null ? +avgDays.toFixed(1) : "",
+      avgFillup != null ? +avgFillup.toFixed(2) : "",
+      sortedE.length > 0 ? new Date(sortedE[0].fecha) : "",
+      sortedE.length > 0 ? new Date(sortedE[sortedE.length - 1].fecha) : "",
+    ]);
+  });
+
+  const wsResumen = XLSX.utils.aoa_to_sheet(aoaResumen, { cellDates: true });
+  const exportDateCell = wsResumen[XLSX.utils.encode_cell({ r: 1, c: 1 })];
+  if (exportDateCell) exportDateCell.z = "dd/mm/yyyy hh:mm";
+  const HDR_ROW = 3;
+  for (let r = HDR_ROW + 1; r < aoaResumen.length; r++) {
+    applyFmt(wsResumen, r, 3, "dd/mm/yyyy");
+    applyFmt(wsResumen, r, 4, "#,##0");
+    applyFmt(wsResumen, r, 5, "#,##0");
+    applyFmt(wsResumen, r, 6, "#,##0");
+    applyFmt(wsResumen, r, 8, "#,##0.00");
+    applyFmt(wsResumen, r, 9, "#,##0.00");
+    applyFmt(wsResumen, r, 10, "#,##0.000");
+    applyFmt(wsResumen, r, 11, "#,##0.00");
+    applyFmt(wsResumen, r, 12, "#,##0.0000");
+    applyFmt(wsResumen, r, 13, "#,##0.0");
+    applyFmt(wsResumen, r, 14, "#,##0.0");
+    applyFmt(wsResumen, r, 15, "#,##0.00");
+    applyFmt(wsResumen, r, 16, "dd/mm/yyyy");
+    applyFmt(wsResumen, r, 17, "dd/mm/yyyy");
+  }
+  wsResumen["!cols"] = [20, 12, 6, 12, 14, 22, 22, 14, 18, 14, 14, 18, 14, 20, 22, 22, 16, 16].map(wch => ({ wch }));
+  XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen por Vehículo");
+
+  // ══════════════════════════════════════════════════════════════════════
+  // PESTAÑA 3: MATRIZ DE GASTO POR VEHÍCULO (€)
+  // ══════════════════════════════════════════════════════════════════════
+  const headerEuros = ["Mes / Año", ...vehHeaders, "TOTAL MES (€)", "Nº repostajes"];
+  const aoaEuros = [headerEuros];
+
+  sortedMonths.forEach((mKey, idx) => {
+    const row = [monthLabels[idx]];
+    let totalMonthEuros = 0, totalCount = 0;
+    vehicles.forEach(v => {
+      const d = (byVehMonth[v.id] && byVehMonth[v.id][mKey]) ? byVehMonth[v.id][mKey] : null;
+      row.push(d && d.euros > 0 ? +d.euros.toFixed(2) : 0);
+      totalMonthEuros += d ? d.euros : 0;
+      totalCount += d ? d.count : 0;
+    });
+    row.push(+totalMonthEuros.toFixed(2));
+    row.push(totalCount);
+    aoaEuros.push(row);
+  });
+
+  if (sortedMonths.length > 0) {
+    const totalRow = ["TOTALES"];
+    vehicles.forEach((v, vIdx) => {
+      const col = XLSX.utils.encode_col(vIdx + 1);
+      totalRow.push({ t: "n", f: `SUM(${col}2:${col}${aoaEuros.length})`, z: "#,##0.00" });
+    });
+    const lastCol = XLSX.utils.encode_col(vehicles.length + 1);
+    totalRow.push({ t: "n", f: `SUM(${lastCol}2:${lastCol}${aoaEuros.length})`, z: "#,##0.00" });
+    const cntCol = XLSX.utils.encode_col(vehicles.length + 2);
+    totalRow.push({ t: "n", f: `SUM(${cntCol}2:${cntCol}${aoaEuros.length})` });
+    aoaEuros.push(totalRow);
+  }
+
+  const wsEuros = XLSX.utils.aoa_to_sheet(aoaEuros);
+  for (let r = 1; r < aoaEuros.length; r++) {
+    for (let c = 1; c <= vehicles.length + 1; c++) applyFmt(wsEuros, r, c, "#,##0.00");
+  }
+  wsEuros["!cols"] = [18, ...vehicles.map(() => ({ wch: 18 })), { wch: 18 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, wsEuros, "Matriz Gasto (€)");
+
+  // ══════════════════════════════════════════════════════════════════════
+  // PESTAÑA 4: MATRIZ DE KILÓMETROS POR VEHÍCULO
+  // ══════════════════════════════════════════════════════════════════════
+  const headerKm = ["Mes / Año", ...vehHeaders, "TOTAL KM"];
+  const aoaKm = [headerKm];
+
+  sortedMonths.forEach((mKey, idx) => {
+    const row = [monthLabels[idx]];
+    let totalMonthKm = 0;
+    vehicles.forEach(v => {
+      const d = (byVehMonth[v.id] && byVehMonth[v.id][mKey]) ? byVehMonth[v.id][mKey].km : 0;
+      row.push(d > 0 ? Math.round(d) : 0);
+      totalMonthKm += d;
+    });
+    row.push(Math.round(totalMonthKm));
+    aoaKm.push(row);
+  });
+
+  if (sortedMonths.length > 0) {
+    const totalRowKm = ["TOTALES"];
+    vehicles.forEach((v, vIdx) => {
+      const col = XLSX.utils.encode_col(vIdx + 1);
+      totalRowKm.push({ t: "n", f: `SUM(${col}2:${col}${aoaKm.length})`, z: "#,##0" });
+    });
+    const lastCol = XLSX.utils.encode_col(vehicles.length + 1);
+    totalRowKm.push({ t: "n", f: `SUM(${lastCol}2:${lastCol}${aoaKm.length})`, z: "#,##0" });
+    aoaKm.push(totalRowKm);
+  }
+
+  const wsKm = XLSX.utils.aoa_to_sheet(aoaKm);
+  for (let r = 1; r < aoaKm.length; r++) {
+    for (let c = 1; c <= vehicles.length + 1; c++) applyFmt(wsKm, r, c, "#,##0");
+  }
+  wsKm["!cols"] = [18, ...vehicles.map(() => ({ wch: 18 })), { wch: 18 }];
+  XLSX.utils.book_append_sheet(wb, wsKm, "Matriz Kilómetros");
+
+  // ══════════════════════════════════════════════════════════════════════
+  // PESTAÑA 5: MATRIZ DE LITROS POR VEHÍCULO
+  // ══════════════════════════════════════════════════════════════════════
+  const headerLit = ["Mes / Año", ...vehHeaders, "TOTAL LITROS"];
+  const aoaLit = [headerLit];
+
+  sortedMonths.forEach((mKey, idx) => {
+    const row = [monthLabels[idx]];
+    let totalMonthLit = 0;
+    vehicles.forEach(v => {
+      const d = (byVehMonth[v.id] && byVehMonth[v.id][mKey]) ? byVehMonth[v.id][mKey].litros : 0;
+      row.push(d > 0 ? +d.toFixed(2) : 0);
+      totalMonthLit += d;
+    });
+    row.push(+totalMonthLit.toFixed(2));
+    aoaLit.push(row);
+  });
+
+  if (sortedMonths.length > 0) {
+    const totalRowLit = ["TOTALES"];
+    vehicles.forEach((v, vIdx) => {
+      const col = XLSX.utils.encode_col(vIdx + 1);
+      totalRowLit.push({ t: "n", f: `SUM(${col}2:${col}${aoaLit.length})`, z: "#,##0.00" });
+    });
+    const lastCol = XLSX.utils.encode_col(vehicles.length + 1);
+    totalRowLit.push({ t: "n", f: `SUM(${lastCol}2:${lastCol}${aoaLit.length})`, z: "#,##0.00" });
+    aoaLit.push(totalRowLit);
+  }
+
+  const wsLit = XLSX.utils.aoa_to_sheet(aoaLit);
+  for (let r = 1; r < aoaLit.length; r++) {
+    for (let c = 1; c <= vehicles.length + 1; c++) applyFmt(wsLit, r, c, "#,##0.00");
+  }
+  wsLit["!cols"] = [18, ...vehicles.map(() => ({ wch: 18 })), { wch: 18 }];
+  XLSX.utils.book_append_sheet(wb, wsLit, "Matriz Litros");
+
+  // ══════════════════════════════════════════════════════════════════════
+  // PESTAÑAS INDIVIDUALES POR VEHÍCULO
+  // ══════════════════════════════════════════════════════════════════════
+  const COLS_VEH = [
+    "Fecha", "Tipo", "Km cuentakilómetros", "Km recorridos",
+    "Importe (€)", "Litros", "€ / litro", "L / 100 km", "€ / km",
+    "Días desde anterior"
+  ];
+  const usedNames = new Set(["Base Datos (Tabla Dinámica)", "Resumen por Vehículo", "Matriz Gasto (€)", "Matriz Kilómetros", "Matriz Litros"]);
+
+  vehicles.forEach(v => {
+    const entries = v.entries || [];
+    const sortedE = [...entries].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+    const aoaV = [COLS_VEH];
+
+    if (v.km_inicial !== undefined && v.km_inicial !== null) {
+      aoaV.push([v.fecha_alta ? new Date(v.fecha_alta) : "", "Km inicial", v.km_inicial, "", "", "", "", "", "", ""]);
+    }
+
+    sortedE.forEach((e, i) => {
+      const prev = i > 0 ? sortedE[i - 1] : null;
+      const dias = prev ? +((new Date(e.fecha) - new Date(prev.fecha)) / 86400000).toFixed(1) : "";
+      aoaV.push([
+        new Date(e.fecha), "Repostaje",
+        e.odometro,
+        e.km_recorridos || "",
+        e.euros,
+        e.litros != null ? e.litros : "",
+        (e.litros && e.euros) ? +(e.euros / e.litros).toFixed(4) : "",
+        e.consumo_l100km != null ? +e.consumo_l100km.toFixed(2) : "",
+        e.coste_por_km != null ? +e.coste_por_km.toFixed(4) : "",
+        dias,
+      ]);
+    });
+
+    // Fila TOTAL
+    if (sortedE.length > 0) {
+      const totalEuros = sortedE.reduce((s, e) => s + (e.euros || 0), 0);
+      const totalLitros = sortedE.reduce((s, e) => s + (e.litros || 0), 0);
+      const totalKm = sortedE.reduce((s, e) => s + (e.km_recorridos || 0), 0);
+      const avgPpl = totalLitros > 0 ? totalEuros / totalLitros : null;
+      const consE = sortedE.filter(e => e.consumo_l100km != null);
+      const avgCons = consE.length > 0 ? consE.reduce((s, e) => s + e.consumo_l100km, 0) / consE.length : null;
+      const cpkmE = sortedE.filter(e => e.coste_por_km != null);
+      const avgCpkm = cpkmE.length > 0 ? cpkmE.reduce((s, e) => s + e.coste_por_km, 0) / cpkmE.length : null;
+
+      aoaV.push([
+        "", `TOTAL (${sortedE.length} repostajes)`,
+        "", totalKm > 0 ? totalKm : "",
+        +totalEuros.toFixed(2),
+        totalLitros > 0 ? +totalLitros.toFixed(2) : "",
+        avgPpl != null ? +avgPpl.toFixed(4) : "",
+        avgCons != null ? +avgCons.toFixed(2) : "",
+        avgCpkm != null ? +avgCpkm.toFixed(4) : "",
+        "",
+      ]);
+    }
+
+    const wsV = XLSX.utils.aoa_to_sheet(aoaV, { cellDates: true });
+    for (let r = 1; r < aoaV.length; r++) {
+      applyFmt(wsV, r, 0, "dd/mm/yyyy");
+      applyFmt(wsV, r, 2, "#,##0");       // odómetro
+      applyFmt(wsV, r, 3, "#,##0");       // km recorridos
+      applyFmt(wsV, r, 4, "#,##0.00");    // importe
+      applyFmt(wsV, r, 5, "#,##0.00");    // litros
+      applyFmt(wsV, r, 6, "#,##0.000");   // €/L
+      applyFmt(wsV, r, 7, "#,##0.00");    // L/100
+      applyFmt(wsV, r, 8, "#,##0.0000");  // €/km
+      applyFmt(wsV, r, 9, "#,##0.0");     // días
+    }
+    wsV["!cols"] = [12, 22, 20, 16, 14, 10, 10, 12, 12, 16].map(wch => ({ wch }));
+
+    const base = (v.name || "Vehículo").replace(/[\[\]:*?\/\\]/g, " ").trim().slice(0, 25) || "Vehículo";
+    let sheetName = base, i = 2;
+    while (usedNames.has(sheetName)) sheetName = `${base} ${i++}`;
+    usedNames.add(sheetName);
+    XLSX.utils.book_append_sheet(wb, wsV, sheetName);
+  });
+
+  return wb;
+}
+
+function exportExcel() {
+  if (typeof XLSX === 'undefined') { toast('⚠️ No se pudo cargar la librería de Excel. Revisa la conexión.', 4000); return; }
+  const vehicles = (getCurrentUser() || {}).vehicles || [];
+  if (!vehicles.some(v => (v.entries || []).length > 0)) { toast('⚠️ Aún no hay repostajes que exportar'); return; }
+  XLSX.writeFile(buildWorkbook(vehicles), `fuel-tracker_matriz_${localDateStr(new Date())}.xlsx`, { cellDates: true });
+  toast('✅ Matriz Excel exportada');
+}
+
+/* ═══════════════════════════════════════════════
+   WIZARD
+═══════════════════════════════════════════════ */
+let wizardKm = null;
+let wizardFecha = null;
+let editingEntryId = null;
+
+function resetWizard() {
+  wizardKm = null; wizardFecha = null; editingEntryId = null;
+  const today = localDateStr(new Date());
+  const fi = document.getElementById('input-fecha');
+  fi.max = today; fi.value = today;
+  fi.classList.remove('error');
+  const km = document.getElementById('input-km');
+  km.value = ''; km.classList.remove('error');
+  document.getElementById('input-euros').value = '';
+  document.getElementById('input-litros').value = '';
+  document.getElementById('calc-preview').style.display = 'none';
+  const veh = getActiveVehicle();
+  document.getElementById('wizard-title').textContent = veh ? `${veh.emoji} ${veh.name} — Nuevo repostaje` : 'Nuevo repostaje';
+  showStep(1);
+  updateKmHint();
+}
+
+function showStep(n) {
+  document.getElementById('step-1').classList.toggle('active', n === 1);
+  document.getElementById('step-2').classList.toggle('active', n === 2);
+  document.getElementById('dot-1').className = 'step-dot ' + (n === 1 ? 'active' : 'done');
+  document.getElementById('dot-2').className = 'step-dot ' + (n === 2 ? 'active' : '');
+  document.getElementById('step-label').textContent = `Paso ${n} de 2`;
+}
+
+function goStep2() {
+  const veh = getActiveVehicle();
+  const fechaVal = document.getElementById('input-fecha').value;
+  const fi = document.getElementById('input-fecha');
+  const ki = document.getElementById('input-km');
+  const v = parseFloat(ki.value);
+  fi.classList.remove('error'); ki.classList.remove('error');
+  if (!fechaVal) { fi.classList.add('error'); toast('⚠️ Elige la fecha del repostaje'); return; }
+  if (fechaVal > localDateStr(new Date())) { fi.classList.add('error'); toast('⚠️ La fecha no puede ser futura'); return; }
+  if (!v || v < 0) { ki.classList.add('error'); toast('⚠️ Introduce los kilómetros del cuentakilómetros'); return; }
+  const orig = editingEntryId ? (veh.entries || []).find(e => e.id === editingEntryId) : null;
+  const iso = dateInputToISO(fechaVal, orig ? orig.fecha : null);
+  const err = kmError(veh, iso, v, editingEntryId);
+  if (err) { ki.classList.add('error'); toast('⚠️ ' + err, 3800); return; }
+  wizardKm = v; wizardFecha = iso;
+  showStep(2);
+  ['input-euros', 'input-litros'].forEach(id => {
+    const el = document.getElementById(id);
+    el.removeEventListener('input', updateCalcPreview);
+    el.addEventListener('input', updateCalcPreview);
+  });
+  updateCalcPreview();
+}
+
+function goStep1() { showStep(1); }
+
+function updateCalcPreview() {
+  const veh = getActiveVehicle();
+  const euros = parseFloat(document.getElementById('input-euros').value);
+  const litros = parseFloat(document.getElementById('input-litros').value);
+  const { prevKm } = neighborsFor(veh, wizardFecha, editingEntryId);
+  const kmRecorridos = prevKm !== null ? (wizardKm - prevKm) : null;
+  const preview = document.getElementById('calc-preview');
+  if (!euros && kmRecorridos === null) { preview.style.display = 'none'; return; }
+  preview.style.display = '';
+  document.getElementById('prev-km').textContent = kmRecorridos !== null && kmRecorridos > 0 ? fmt(kmRecorridos, 0) + ' km' : prevKm === null ? 'Primer repostaje' : '—';
+  document.getElementById('prev-cpkm').textContent = (euros && kmRecorridos > 0) ? fmt(euros / kmRecorridos, 3) + ' €/km' : '—';
+
+  const pplRow = document.getElementById('prev-ppl-row');
+  if (pplRow) {
+    if (litros && litros > 0 && euros && euros > 0) {
+      pplRow.style.display = '';
+      document.getElementById('prev-ppl').textContent = fmt(euros / litros, 3) + ' €/L';
+    } else {
+      pplRow.style.display = 'none';
+    }
+  }
+
+  const consRow = document.getElementById('prev-cons-row');
+  if (litros && litros > 0 && kmRecorridos > 0) {
+    consRow.style.display = '';
+    document.getElementById('prev-cons').textContent = fmt((litros / kmRecorridos) * 100, 2) + ' L/100km';
+  } else { consRow.style.display = 'none'; }
+}
+
+/* ═══════════════════════════════════════════════
+   SAVE ENTRY
+═══════════════════════════════════════════════ */
+function saveEntry() {
+  const euros = parseFloat(document.getElementById('input-euros').value);
+  const litros = parseFloat(document.getElementById('input-litros').value) || null;
+  if (!euros || euros <= 0) { document.getElementById('input-euros').classList.add('error'); toast('⚠️ Introduce el importe en euros'); return; }
+  document.getElementById('input-euros').classList.remove('error');
+
+  const data = loadData();
+  const user = data.users[session.username];
+  const veh = user.vehicles.find(v => v.id === session.activeVehicleId);
+  if (!veh) { toast('❌ Vehículo no encontrado'); return; }
+  if (!veh.entries) veh.entries = [];
+  const err = kmError(veh, wizardFecha, wizardKm, editingEntryId);
+  if (err) { toast('⚠️ ' + err, 3800); showStep(1); return; }
+
+  const fields = {
+    fecha: wizardFecha,
+    odometro: wizardKm,
+    euros,
+    litros,
+    precio_litro: (litros && euros) ? euros / litros : null,
+  };
+  const wasEditing = !!editingEntryId;
+  if (wasEditing) {
+    const i = veh.entries.findIndex(e => e.id === editingEntryId);
+    if (i === -1) { toast('❌ Repostaje no encontrado'); return; }
+    veh.entries[i] = { ...veh.entries[i], ...fields };
+  } else {
+    veh.entries.push({ id: genId(), ...fields, km_recorridos: 0, consumo_l100km: null, coste_por_km: null });
+  }
+  recalcEntries(veh);
+  saveData(data);
+  editingEntryId = null;
+  resetCharts();
+  toast(wasEditing ? '✅ Repostaje actualizado' : '✅ Repostaje guardado');
+  showView(wasEditing ? 'history' : 'dashboard');
+}
+
+/* ═══════════════════════════════════════════════
+   DELETE ENTRY
+═══════════════════════════════════════════════ */
+function deleteEntry(id) {
+  if (!confirm('¿Eliminar este repostaje?')) return;
+  const data = loadData();
+  const user = data.users[session.username];
+  const veh = user.vehicles.find(v => v.id === session.activeVehicleId);
+  if (!veh) return;
+  veh.entries = (veh.entries || []).filter(e => e.id !== id);
+  recalcEntries(veh);
+  saveData(data);
+  resetCharts();
+  toast('🗑️ Repostaje eliminado');
+  renderHistory();
+  renderDashboard();
+}
+
+/* ═══════════════════════════════════════════════
+   VEHICLE MODAL
+═══════════════════════════════════════════════ */
+const VEHICLE_TYPES = [
+  { emoji: '🚗', label: 'Coche' },
+  { emoji: '🏍️', label: 'Moto' },
+  { emoji: '🚐', label: 'Furgoneta' },
+  { emoji: '🚛', label: 'Camión' },
+  { emoji: '🛻', label: 'Pick-up' },
+  { emoji: '🚌', label: 'Bus' },
+  { emoji: '🚜', label: 'Tractor' },
+  { emoji: '🚑', label: 'Otros' },
+];
+let selectedEmoji = '🚗';
+let editingVehicleId = null;
+
+function openVehicleModal(vehicleId) {
+  const isEditing = typeof vehicleId === 'string' && vehicleId.length > 0;
+  editingVehicleId = isEditing ? vehicleId : null;
+  selectedEmoji = '🚗';
+  const modal = document.getElementById('vehicle-modal');
+  document.getElementById('vehicle-modal-title').textContent = isEditing ? 'Editar vehículo' : 'Añadir vehículo';
+  document.getElementById('vm-name').value = '';
+  document.getElementById('vm-name').classList.remove('error');
+  document.getElementById('vm-plate').value = '';
+  const kmEl = document.getElementById('vm-km');
+  kmEl.value = '';
+  kmEl.disabled = false;
+  kmEl.classList.remove('error');
+  document.getElementById('vm-km-hint').textContent = 'Los km del cuentakilómetros antes del primer repostaje';
+
+  const fillWrap = document.getElementById('vm-first-fill-wrap');
+  if (fillWrap) {
+    fillWrap.style.display = isEditing ? 'none' : 'flex';
+    document.getElementById('vm-euros').value = '';
+    document.getElementById('vm-litros').value = '';
+  }
+
+  if (isEditing) {
+    const veh = (getCurrentUser().vehicles || []).find(v => v.id === vehicleId);
+    if (veh) {
+      document.getElementById('vm-name').value = veh.name;
+      document.getElementById('vm-plate').value = veh.plate || '';
+      selectedEmoji = veh.emoji;
+      kmEl.value = (veh.km_inicial !== undefined && veh.km_inicial !== null) ? veh.km_inicial : '';
+      if ((veh.entries || []).length > 0) {
+        kmEl.disabled = true;
+        document.getElementById('vm-km-hint').textContent = 'No se puede cambiar: ya hay repostajes registrados';
+      }
+    }
+  }
+
+  const picker = document.getElementById('vm-emoji-picker');
+  picker.innerHTML = '';
+  VEHICLE_TYPES.forEach(t => {
+    const opt = document.createElement('div');
+    opt.className = 'emoji-opt' + (t.emoji === selectedEmoji ? ' selected' : '');
+    opt.innerHTML = `<span class="eo-em">${t.emoji}</span><span class="eo-label">${t.label}</span>`;
+    opt.onclick = () => {
+      selectedEmoji = t.emoji;
+      picker.querySelectorAll('.emoji-opt').forEach(el => el.classList.remove('selected'));
+      opt.classList.add('selected');
+    };
+    picker.appendChild(opt);
+  });
+
+  modal.style.display = 'flex';
+}
+
+function closeVehicleModal(e) {
+  if (e && e.target !== document.getElementById('vehicle-modal')) return;
+  document.getElementById('vehicle-modal').style.display = 'none';
+}
+
+function saveVehicle() {
+  const user = getCurrentUser();
+  if (!user || !session || !session.username) { toast('❌ Error: Sesión no válida. Inicia sesión de nuevo.'); return; }
+
+  const name = document.getElementById('vm-name').value.trim();
+  const plate = document.getElementById('vm-plate').value.trim().toUpperCase();
+  const kmRaw = document.getElementById('vm-km').value.trim();
+  const kmLocked = document.getElementById('vm-km').disabled;
+
+  if (!name) { 
+    document.getElementById('vm-name').classList.add('error');
+    toast('⚠️ Introduce un nombre para el vehículo'); 
+    return; 
+  }
+  document.getElementById('vm-name').classList.remove('error');
+
+  let kmIni = 0;
+  if (!kmLocked && kmRaw !== '') {
+    kmIni = parseFloat(kmRaw);
+    if (isNaN(kmIni) || kmIni < 0) {
+      document.getElementById('vm-km').classList.add('error');
+      toast('⚠️ Introduce un kilometraje inicial válido');
+      return;
+    }
+  }
+  document.getElementById('vm-km').classList.remove('error');
+
+  const data = loadData();
+  const dbUser = data.users[session.username];
+  if (!dbUser) { toast('❌ Error: Usuario no encontrado en los datos'); return; }
+  if (!dbUser.vehicles) dbUser.vehicles = [];
+
+  const isEditing = typeof editingVehicleId === 'string' && editingVehicleId.length > 0;
+
+  if (isEditing) {
+    const idx = dbUser.vehicles.findIndex(v => v.id === editingVehicleId);
+    if (idx !== -1) { 
+      dbUser.vehicles[idx].name = name; 
+      dbUser.vehicles[idx].emoji = selectedEmoji; 
+      dbUser.vehicles[idx].plate = plate; 
+      if (!kmLocked) {
+        dbUser.vehicles[idx].km_inicial = kmIni;
+      }
+    }
+  } else {
+    if (dbUser.vehicles.length >= 3) { toast('⚠️ Máximo 3 vehículos por usuario'); return; }
+    
+    const firstEuros = parseFloat(document.getElementById('vm-euros').value);
+    const firstLitros = parseFloat(document.getElementById('vm-litros').value) || null;
+
+    const initialEntries = [];
+    if (!isNaN(firstEuros) && firstEuros > 0) {
+      initialEntries.push({
+        id: genId(),
+        fecha: new Date().toISOString(),
+        odometro: kmIni,
+        euros: firstEuros,
+        litros: firstLitros,
+        precio_litro: firstLitros ? firstEuros / firstLitros : null,
+        km_recorridos: 0,
+        consumo_l100km: null,
+        coste_por_km: null
+      });
+    }
+
+    const newVeh = { 
+      id: genId(), 
+      name, 
+      emoji: selectedEmoji, 
+      plate, 
+      km_inicial: kmIni, 
+      fecha_alta: new Date().toISOString(), 
+      entries: initialEntries 
+    };
+    dbUser.vehicles.push(newVeh);
+    session.activeVehicleId = newVeh.id;
+    setSession(session);
+  }
+
+  saveData(data);
+  document.getElementById('vehicle-modal').style.display = 'none';
+  toast(isEditing ? '✅ Vehículo actualizado' : '✅ Vehículo añadido');
+  resetCharts();
+  renderVehicleStrip();
+  renderDashboard();
+  if (currentView === 'settings') renderSettings();
+}
+
+/* ═══════════════════════════════════════════════
+   DELETE VEHICLE
+═══════════════════════════════════════════════ */
+function deleteVehicle(vehicleId) {
+  const veh = (getCurrentUser().vehicles || []).find(v => v.id === vehicleId);
+  if (!veh) return;
+  const entryCount = (veh.entries || []).length;
+  const msg = entryCount > 0
+    ? `¿Eliminar "${veh.name}"? Se borrarán ${entryCount} repostaje(s). Esta acción no se puede deshacer.`
+    : `¿Eliminar el vehículo "${veh.name}"?`;
+  if (!confirm(msg)) return;
+  const data = loadData();
+  const user = data.users[session.username];
+  user.vehicles = user.vehicles.filter(v => v.id !== vehicleId);
+  if (session.activeVehicleId === vehicleId) {
+    session.activeVehicleId = user.vehicles.length > 0 ? user.vehicles[0].id : null;
+    setSession(session);
+  }
+  saveData(data);
+  resetCharts();
+  renderVehicleStrip();
+  renderSettings();
+  renderDashboard();
+  toast('🗑️ Vehículo eliminado');
+}
+
+/* ═══════════════════════════════════════════════
+   CHANGE PASSWORD MODAL
+═══════════════════════════════════════════════ */
+function openChPassModal() { document.getElementById('chpass-modal').style.display = 'flex'; ['cp-current','cp-new','cp-new2'].forEach(id => document.getElementById(id).value = ''); }
+function closeChPassModal(e) {
+  if (e && e.target !== document.getElementById('chpass-modal')) return;
+  document.getElementById('chpass-modal').style.display = 'none';
+}
+
+async function doChangePassword() {
+  const current = document.getElementById('cp-current').value;
+  const newPass = document.getElementById('cp-new').value;
+  const newPass2 = document.getElementById('cp-new2').value;
+  if (!current || !newPass || !newPass2) { toast('⚠️ Completa todos los campos'); return; }
+  if (newPass.length < 4) { toast('⚠️ Nueva contraseña: mínimo 4 caracteres'); return; }
+  if (newPass !== newPass2) { toast('⚠️ Las contraseñas nuevas no coinciden'); return; }
+  const data = loadData();
+  const user = data.users[session.username];
+  const currentHash = await hashPassword(session.username, current);
+  if (currentHash !== user.passwordHash) { toast('❌ Contraseña actual incorrecta'); return; }
+  user.passwordHash = await hashPassword(session.username, newPass);
+  saveData(data);
+  document.getElementById('chpass-modal').style.display = 'none';
+  toast('✅ Contraseña cambiada');
+}
+
+/* ═══════════════════════════════════════════════
+   DASHBOARD RENDER
+═══════════════════════════════════════════════ */
+function renderDashboard() {
+  const user = getCurrentUser();
+  const vehicles = user ? (user.vehicles || []) : [];
+  const noVehState = document.getElementById('no-vehicle-state');
+  const emptyState = document.getElementById('empty-state');
+  const statsSection = document.getElementById('stats-section');
+  const fab = document.getElementById('fab-add');
+
+  if (vehicles.length === 0) {
+    noVehState.style.display = '';
+    emptyState.style.display = 'none';
+    statsSection.style.display = 'none';
+    fab.style.display = 'none';
+    document.getElementById('top-bar-sub').textContent = 'Sin vehículos';
+    return;
+  }
+  fab.style.display = '';
+  noVehState.style.display = 'none';
+
+  const entries = getActiveEntries();
+  const veh = getActiveVehicle();
+  const lastKm = getLastOdometer(veh);
+  document.getElementById('top-bar-sub').textContent = veh 
+    ? `${veh.emoji} ${veh.name}${lastKm !== null ? ' · ' + fmt(lastKm, 0) + ' km' : ''}` 
+    : '—';
+
+  if (entries.length === 0) {
+    emptyState.style.display = '';
+    statsSection.style.display = 'none';
+    const esText = document.querySelector('#empty-state p');
+    if (esText) {
+      if (veh && veh.km_inicial !== undefined && veh.km_inicial !== null && veh.km_inicial > 0) {
+        esText.innerHTML = `Kilometraje inicial guardado: <strong>${fmt(veh.km_inicial, 0)} km</strong>.<br>Pulsa <strong>+</strong> para registrar tu primer repostaje.`;
+      } else {
+        esText.innerHTML = `Pulsa <strong>+</strong> para registrar tu primer repostaje.`;
+      }
+    }
+    return;
+  }
+  emptyState.style.display = 'none';
+  statsSection.style.display = '';
+
+  const totalEuros = entries.reduce((s, e) => s + e.euros, 0);
+  const totalKm = entries.reduce((s, e) => s + e.km_recorridos, 0);
+  const tramos = entries.filter(e => e.km_recorridos > 0);
+  const avgKm = tramos.length > 0 ? tramos.reduce((s, e) => s + e.km_recorridos, 0) / tramos.length : 0;
+  const avgCpkm = totalKm > 0 ? totalEuros / totalKm : null;
+  const avgFillup = totalEuros / entries.length;
+  const consEntries = entries.filter(e => e.consumo_l100km !== null);
+  const avgL100 = consEntries.length > 0 ? consEntries.reduce((s, e) => s + e.consumo_l100km, 0) / consEntries.length : null;
+  let avgDays = null;
+  if (entries.length >= 2) {
+    let td = 0;
+    for (let i = 1; i < entries.length; i++) td += (new Date(entries[i].fecha) - new Date(entries[i-1].fecha)) / 86400000;
+    avgDays = td / (entries.length - 1);
+  }
+
+  document.getElementById('s-total-cost').textContent = fmtEuro(totalEuros);
+  document.getElementById('s-total-km').textContent = totalKm > 0 ? fmt(totalKm, 0) + ' km' : '—';
+  document.getElementById('s-avg-cpkm').textContent = avgCpkm ? fmt(avgCpkm, 3) + ' €/km' : '—';
+  document.getElementById('s-avg-l100').textContent = avgL100 ? fmt(avgL100, 2) + ' L/100km' : '';
+  document.getElementById('s-avg-km').textContent = avgKm > 0 ? fmt(avgKm, 0) + ' km' : '—';
+  document.getElementById('s-avg-days').textContent = avgDays ? fmt(avgDays, 1) + ' días entre repos.' : `${entries.length} repostaje(s)`;
+  document.getElementById('s-avg-fillup').textContent = fmtEuro(avgFillup);
+  document.getElementById('s-count').textContent = `${entries.length} repostajes · ${veh ? veh.name : ''}`;
+
+  const lastEntry = entries[entries.length - 1];
+  const estBanner = document.getElementById('estimate-banner');
+  if (avgDays && avgKm > 0) {
+    const estDate = new Date(new Date(lastEntry.fecha).getTime() + avgDays * 86400000);
+    const daysLeft = Math.round((estDate - new Date()) / 86400000);
+    document.getElementById('est-date').textContent = daysLeft > 0 ? `En ~${daysLeft} días (${formatDate(estDate.toISOString())})` : daysLeft === 0 ? '¡Hoy aproximadamente!' : `Hace ~${Math.abs(daysLeft)} días`;
+    document.getElementById('est-sub').textContent = `~${fmt(avgDays, 0)} días entre repostajes · ~${fmt(avgKm, 0)} km de media`;
+    estBanner.style.display = '';
+  } else { estBanner.style.display = 'none'; }
+
+  const labels = entries.map(e => formatDateShort(e.fecha));
+  renderChart('chart-cost', labels, entries.map(e => e.euros), '€', '#2B5CE6', 'rgba(43,92,230,0.08)');
+  renderChart('chart-km', labels, entries.map(e => e.km_recorridos), 'km', '#1A7A4A', 'rgba(26,122,74,0.08)');
+  if (consEntries.length > 0) {
+    document.getElementById('chart-cons-section').style.display = '';
+    renderChart('chart-cons', labels, entries.map(e => e.consumo_l100km), 'L/100km', '#8A6800', 'rgba(138,104,0,0.08)', true);
+  } else { document.getElementById('chart-cons-section').style.display = 'none'; }
+
+  const priceEntries = entries.filter(e => e.precio_litro);
+  if (priceEntries.length > 0) {
+    document.getElementById('chart-price-section').style.display = '';
+    renderChart('chart-price', priceEntries.map(e => formatDateShort(e.fecha)), priceEntries.map(e => e.precio_litro), '€/L', '#A0520A', 'rgba(160,82,10,0.08)', true);
+  } else { document.getElementById('chart-price-section').style.display = 'none'; }
+
+  renderMonthly(entries);
+}
+
+function renderMonthly(entries) {
+  const by = aggregateMonthly(entries);
+  const now = new Date();
+  const labels = [], values = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+    labels.push(d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }));
+    values.push(by[key] ? by[key].euros : 0);
+  }
+  renderChart('chart-month', labels, values, '€', '#5B4FCF', null, false, 'bar');
+
+
+  const years = {};
+  Object.keys(by).sort().reverse().forEach(k => { (years[k.slice(0, 4)] = years[k.slice(0, 4)] || []).push(k); });
+  document.getElementById('monthly-list').innerHTML = Object.keys(years).sort().reverse().map(y => {
+    const total = years[y].reduce((sum, k) => sum + by[k].euros, 0);
+    const rows = years[y].map(k => {
+      const m = by[k];
+      const name = new Date(+k.slice(0, 4), +k.slice(5, 7) - 1, 1).toLocaleDateString('es-ES', { month: 'long' });
+      const meta = `${m.n} repost.` + (m.km > 0 ? ` · ${fmt(m.km, 0)} km` : '');
+      return `<div class="month-row"><span class="mr-name">${name}</span><span class="mr-meta">${meta}</span><span class="mr-val">${fmtEuro(m.euros)}</span></div>`;
+    }).join('');
+    return `<div class="year-head"><span>${y}</span><span>${fmtEuro(total)}</span></div>${rows}`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   HISTORY RENDER
+═══════════════════════════════════════════════ */
+function renderHistory() {
+  const entries = getActiveEntries();
+  const veh = getActiveVehicle();
+  const container = document.getElementById('history-list');
+  document.getElementById('hist-subtitle').textContent = entries.length > 0 ? `${entries.length} repostajes · ${veh ? veh.emoji + ' ' + veh.name : ''}` : 'Sin repostajes';
+
+  if (entries.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="es-icon">📋</div><h2>Sin historial</h2><p>Registra tu primer repostaje con el botón +.</p></div>`;
+    return;
+  }
+
+  const reversed = [...entries].reverse();
+  const altaRow = (veh && veh.km_inicial !== undefined && veh.km_inicial !== null)
+    ? `<div class="history-card milestone">
+      <div class="hi-header">
+        <div class="hi-date-badge"><span class="hi-icon">🏁</span> Alta del vehículo (${veh.fecha_alta ? formatDate(veh.fecha_alta) : 'Inicial'})</div>
+      </div>
+      <div class="hi-main-row">
+        <div class="hi-km-info" style="text-align:left">${fmt(veh.km_inicial, 0)} km <span class="hi-km-tag">(kilometraje inicial)</span></div>
+      </div>
+    </div>` : '';
+
+  container.innerHTML = '<div style="padding:12px 14px 0">' + reversed.map((e, ri) => {
+    const i = entries.length - 1 - ri;
+    const isFirst = i === 0 && (!veh || veh.km_inicial === undefined || veh.km_inicial === null);
+    
+    const pills = [
+      e.litros ? `<span class="pill liters">🛢️ ${fmt(e.litros, 1)} L</span>` : '',
+      e.precio_litro ? `<span class="pill price">⛽ ${fmt(e.precio_litro, 3)} €/L</span>` : '',
+      e.consumo_l100km ? `<span class="pill cons">📊 ${fmt(e.consumo_l100km, 2)} L/100km</span>` : '',
+      e.coste_por_km && !isFirst ? `<span class="pill cpkm">📍 ${fmt(e.coste_por_km, 3)} €/km</span>` : '',
+    ].filter(Boolean).join('');
+
+    const kmText = isFirst
+      ? `<span class="hi-km-info">${fmt(e.odometro, 0)} km <span class="hi-km-tag">(inicio)</span></span>`
+      : `<span class="hi-km-info">${fmt(e.odometro, 0)} km <span class="hi-km-diff">+${fmt(e.km_recorridos, 0)} km</span></span>`;
+
+    return `<div class="history-card">
+      <div class="hi-header">
+        <div class="hi-date-badge"><span class="hi-icon">${veh ? veh.emoji : '⛽'}</span> ${formatDate(e.fecha)}</div>
+        <div class="hi-actions">
+          <button class="hi-action-btn edit" onclick="editEntry('${e.id}')">✏️ Editar</button>
+          <button class="hi-action-btn del" onclick="deleteEntry('${e.id}')">🗑️ Eliminar</button>
+        </div>
+      </div>
+      <div class="hi-main-row">
+        <div class="hi-euro-val">${fmtEuro(e.euros)}</div>
+        ${kmText}
+      </div>
+      ${pills ? `<div class="hi-pills">${pills}</div>` : ''}
+    </div>`;
+  }).join('') + altaRow + '</div>';
+}
+
+/* ═══════════════════════════════════════════════
+   SETTINGS RENDER
+═══════════════════════════════════════════════ */
+function renderSettings() {
+  const user = getCurrentUser();
+  const vehicles = user ? (user.vehicles || []) : [];
+  const list = document.getElementById('vehicles-settings-list');
+  const addBtn = document.getElementById('add-vehicle-settings-btn');
+  addBtn.style.display = vehicles.length >= 3 ? 'none' : '';
+  if (vehicles.length === 0) {
+    list.innerHTML = `<div class="card" style="color:var(--text3);font-size:0.83rem;text-align:center;padding:20px">Sin vehículos. Añade uno.</div>`;
+    return;
+  }
+  list.innerHTML = vehicles.map(v => {
+    const count = (v.entries || []).length;
+    return `<div class="vehicle-settings-card">
+      <div class="vc-icon">${v.emoji}</div>
+      <div class="vc-body">
+        <div class="vc-name">${v.name}</div>
+        <div class="vc-plate">${v.plate ? '🪪 ' + v.plate : 'Sin matrícula'}</div>
+        <div class="vc-count">🏁 ${v.km_inicial !== undefined && v.km_inicial !== null ? fmt(v.km_inicial, 0) + ' km iniciales' : 'Sin km inicial'} · 📊 ${count} repostaje${count !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="vc-actions">
+        <button class="icon-btn" onclick="openVehicleModal('${v.id}')" title="Editar">✏️</button>
+        <button class="icon-btn del" onclick="deleteVehicle('${v.id}')" title="Eliminar">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   CHARTS
+═══════════════════════════════════════════════ */
+function resetCharts() {
+  Object.keys(chartInstances).forEach(k => { try { chartInstances[k].destroy(); } catch (e) {} });
+  chartInstances = {};
+}
+
+function renderChart(canvasId, labels, data, unit, lineColor, fillColor, spanGaps, kind) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const prev = (typeof Chart.getChart === 'function') ? Chart.getChart(canvas) : null;
+  if (prev) prev.destroy();
+  if (chartInstances[canvasId]) { try { chartInstances[canvasId].destroy(); } catch (e) {} }
+  const isBar = kind === 'bar';
+  const clean = data.map(v => v === null || v === 0 ? null : v);
+  chartInstances[canvasId] = new Chart(canvas, {
+    type: isBar ? 'bar' : 'line',
+    data: {
+      labels,
+      datasets: [isBar
+        ? { data: clean, backgroundColor: lineColor, borderRadius: 4, maxBarThickness: 24 }
+        : {
+            data: clean,
+            borderColor: lineColor, backgroundColor: fillColor, fill: true,
+            tension: 0.35, pointRadius: 3, pointBackgroundColor: lineColor,
+            pointBorderColor: '#FFFFFF', pointBorderWidth: 2, spanGaps: !!spanGaps,
+          }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `${fmt(ctx.parsed.y, 2)} ${unit}` } }
+      },
+      scales: {
+        x: { ticks: { color: '#999999', font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+        y: { beginAtZero: isBar, ticks: { color: '#999999', font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.06)' } }
+      }
+    }
+  });
+}
+
+
+/* ═══════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════ */
+function fmt(n, dec = 2) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  if (dec === 0) return Math.round(n).toLocaleString('es-ES');
+  return n.toLocaleString('es-ES', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function fmtEuro(n) { if (n === null || isNaN(n)) return '—'; return n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
+function formatDate(iso) { return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }); }
+function formatDateShort(iso) { return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }); }
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function toast(msg, dur = 2800) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), dur);
+}
+
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+session = getSession();
+if (session) {
+  const data = loadData();
+  if (data.users[session.username]) {
+    // Ensure active vehicle still exists
+    const vehicles = data.users[session.username].vehicles || [];
+    if (session.activeVehicleId && !vehicles.find(v => v.id === session.activeVehicleId)) {
+      session.activeVehicleId = vehicles.length > 0 ? vehicles[0].id : null;
+      setSession(session);
+    }
+    initMainApp();
+  } else {
+    clearSession();
+    session = null;
+    document.getElementById('auth-screen').classList.add('active');
+  }
+} else {
+  document.getElementById('auth-screen').classList.add('active');
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
